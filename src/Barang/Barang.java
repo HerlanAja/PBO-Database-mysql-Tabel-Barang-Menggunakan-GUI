@@ -27,7 +27,7 @@ public class Barang {
         return namaBarang;  
     }
 
-    public void setNamaang(String namaBarang) {
+    public void setNamaBarang(String namaBarang) {
         this.namaBarang = namaBarang;
     }
 

@@ -137,18 +137,37 @@ public class FormBarang extends JFrame {
     }
 
     void simpanData(Barang B) {
+        Connection cn = null;
+        Statement st = null;
         try {
-            Connection cn = new connecDB().getConnect();
-            Statement st = cn.createStatement();
+            cn = new connecDB().getConnect();
+            st = cn.createStatement();
             String sql = "INSERT INTO tbl_barang (kode_barang, nama_barang, harga_barang, stok_barang) " +
                     "VALUES ('" + B.getKodebarang() + "', '" + B.getNamaBarang() + "', " + B.getHargaBarang() + ", " + B.getStokbarang() + ")";
-            cn.close();
+            System.out.println("Executing SQL: " + sql);  // Output debug
+            st.executeUpdate(sql);  // Pastikan untuk mengeksekusi query
             JOptionPane.showMessageDialog(null, "Data Berhasil Disimpan",
                     "Info Proses", JOptionPane.INFORMATION_MESSAGE);
+
+            // Ambil data kembali untuk memastikan data tersimpan
+            String sqlSelect = "SELECT * FROM tbl_barang WHERE kode_barang = '" + B.getKodebarang() + "'";
+            ResultSet rs = st.executeQuery(sqlSelect);
+            if (rs.next()) {
+                System.out.println("Data Tersimpan: " + rs.getString("kode_barang") + ", " + rs.getString("nama_barang"));
+            }
+
             String[] data = {B.getKodebarang(), B.getNamaBarang(), String.valueOf(B.getHargaBarang()), String.valueOf(B.getStokbarang())};
             df.addRow(data);
         } catch (SQLException ex) {
             ex.printStackTrace();
+        } finally {
+            // Tutup statement dan koneksi
+            try {
+                if (st != null) st.close();
+                if (cn != null) cn.close();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
@@ -157,79 +176,86 @@ public class FormBarang extends JFrame {
             Connection cn = new connecDB().getConnect();
             Statement st = cn.createStatement();
             String sql = "DELETE FROM tbl_barang WHERE kode_barang = '" + kodeBarang + "'";
-            int result = st.executeUpdate(sql);
+            st.executeUpdate(sql);
+            JOptionPane.showMessageDialog(null, "Data Berhasil Dihapus",
+                    "Info Proses", JOptionPane.INFORMATION_MESSAGE);
+            st.close();
             cn.close();
-            JOptionPane.showMessageDialog(null, "Data Berhasil Dihapus", "Info Proses",
-                    JOptionPane.INFORMATION_MESSAGE);
-            df.removeRow(tab.getSelectedRow());
-            clearTextField();
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
     }
 
-    void ubahData(Barang B, String kodeBarang) {
+    void editData(Barang B) {
         try {
             Connection cn = new connecDB().getConnect();
             Statement st = cn.createStatement();
-            String sql = "UPDATE tbl_barang SET kode_barang='" + B.getKodebarang() + "', nama_barang='" + B.getNamaBarang() +
-                    "', harga_barang=" + B.getHargaBarang() + ", stok_barang=" + B.getStokbarang() +
-                    " WHERE kode_barang='" + kodeBarang + "'";
-            int result = st.executeUpdate(sql);
+            String sql = "UPDATE tbl_barang SET nama_barang = '" + B.getNamaBarang() + "', harga_barang = " + B.getHargaBarang() + ", stok_barang = " + B.getStokbarang() + " WHERE kode_barang = '" + B.getKodebarang() + "'";
+            st.executeUpdate(sql);
+            JOptionPane.showMessageDialog(null, "Data Berhasil Diubah",
+                    "Info Proses", JOptionPane.INFORMATION_MESSAGE);
+            st.close();
             cn.close();
-            JOptionPane.showMessageDialog(null, "Data Berhasil Diubah", "Info Proses",
-                    JOptionPane.INFORMATION_MESSAGE);
-            clearTable();
-            loadData();
         } catch (SQLException ex) {
             ex.printStackTrace();
+        }
+    }
+
+    private void btAddAksi(ActionEvent evt) {
+        try {
+            String kodeBarang = txKodeBarang.getText();
+            String namaBarang = txNamaBarang.getText();
+            int hargaBarang = Integer.parseInt(txHargaBarang.getText());
+            int stokBarang = Integer.parseInt(txStokBarang.getText());
+            Barang B = new Barang(kodeBarang, namaBarang, hargaBarang, stokBarang);
+            simpanData(B);
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(null, "Harga dan Stok harus berupa angka", "Error Input", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void btNewAksi(ActionEvent evt) {
         clearTextField();
+        btAdd.setEnabled(true);
         btEdit.setEnabled(false);
         btDel.setEnabled(false);
-        btAdd.setEnabled(true);
-    }
-
-    private void btAddAksi(ActionEvent evt) {
-        Barang B = new Barang(txKodeBarang.getText(), txNamaBarang.getText(), Integer.parseInt(txHargaBarang.getText()), Integer.parseInt(txStokBarang.getText()));
-        simpanData(B);
-    }
-
-    private void btDelAksi(ActionEvent evt) {
-        int status;
-        status = JOptionPane.showConfirmDialog(null, "Yakin data akan dihapus?",
-                "Konfirmasi", JOptionPane.OK_CANCEL_OPTION);
-        if (status == 0) {
-            hapusData(txKodeBarang.getText());
-        }
     }
 
     private void btEditAksi(ActionEvent evt) {
-        Barang B = new Barang(txKodeBarang.getText(), txNamaBarang.getText(), Integer.parseInt(txHargaBarang.getText()), Integer.parseInt(txStokBarang.getText()));
-        ubahData(B, tab.getValueAt(tab.getSelectedRow(), 0).toString());
+        try {
+            String kodeBarang = txKodeBarang.getText();
+            String namaBarang = txNamaBarang.getText();
+            int hargaBarang = Integer.parseInt(txHargaBarang.getText());
+            int stokBarang = Integer.parseInt(txStokBarang.getText());
+            Barang B = new Barang(kodeBarang, namaBarang, hargaBarang, stokBarang);
+            editData(B);
+            clearTable();
+            loadData();
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(null, "Harga dan Stok harus berupa angka", "Error Input", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void btDelAksi(ActionEvent evt) {
+        String kodeBarang = txKodeBarang.getText();
+        hapusData(kodeBarang);
+        clearTable();
+        loadData();
+        clearTextField();
     }
 
     private void tabMouseClicked(MouseEvent evt) {
+        int row = tab.getSelectedRow();
+        txKodeBarang.setText(df.getValueAt(row, 0).toString());
+        txNamaBarang.setText(df.getValueAt(row, 1).toString());
+        txHargaBarang.setText(df.getValueAt(row, 2).toString());
+        txStokBarang.setText(df.getValueAt(row, 3).toString());
+        btAdd.setEnabled(false);
         btEdit.setEnabled(true);
         btDel.setEnabled(true);
-        btAdd.setEnabled(false);
-        String kodeBarang, namaBarang;
-        int hargaBarang, stokBarang;
-        kodeBarang = tab.getValueAt(tab.getSelectedRow(), 0).toString();
-        namaBarang = tab.getValueAt(tab.getSelectedRow(), 1).toString();
-        hargaBarang = Integer.parseInt(tab.getValueAt(tab.getSelectedRow(), 2).toString());
-        stokBarang = Integer.parseInt(tab.getValueAt(tab.getSelectedRow(), 3).toString());
-        txKodeBarang.setText(kodeBarang);
-        txNamaBarang.setText(namaBarang);
-        txHargaBarang.setText(String.valueOf(hargaBarang));
-        txStokBarang.setText(String.valueOf(stokBarang));
     }
 
     public static void main(String[] args) {
         new FormBarang().loadData();
     }
 }
-

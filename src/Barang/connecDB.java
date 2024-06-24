@@ -1,13 +1,14 @@
 package Barang;
-//ConnectDB.java
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class connecDB {
     private String url, usr, pwd, db;
+    
     connecDB(){
-        db = "mahasiswa";
+        db = "toko";
         url = "jdbc:mysql://localhost/"+db;
         usr = "root";
         pwd = "";
@@ -18,7 +19,7 @@ public class connecDB {
         try {
             //load driver database
             Class.forName("com.mysql.cj.jdbc.Driver");
-            cn = DriverManager.getConnection(url,usr, pwd);
+            cn = DriverManager.getConnection(url, usr, pwd);
             System.out.println("Koneksi Berhasil");
         } catch (ClassNotFoundException er) {
             System.out.println("Error #1: " + er.getMessage());
@@ -28,7 +29,8 @@ public class connecDB {
         }
         return cn;
     }
-    public static void main(String [] args) {
+    
+    public static void main(String[] args) {
         new connecDB().getConnect();
     }
 }
